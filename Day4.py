@@ -42,16 +42,28 @@ def parseInput(string):
 
 file = open("input.txt", "r")
 cards = []
+
 for id, line in enumerate(file):
     winning, numbers = parseInput(line)
     cards.append(Card(id+1, winning, numbers))
 
 
-
-
-
-
-numCards = 0
 for card in cards:
-    numCards += card.coppies
-print(numCards)
+    c = card.coppies
+    n = card.getMatches()
+    for i in range(n):
+        if i+ 1 < len(cards):
+            cards[(card.id)+i].coppies += c
+
+
+
+
+sum = 0
+for card in cards:
+    #print(card.id, card.getMatches(), card.coppies)
+    sum += card.coppies
+print(sum)
+
+
+
+
