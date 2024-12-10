@@ -1,6 +1,8 @@
 import os
 import itertools
-
+from multiprocessing import Pool, cpu_count
+import multiprocessing
+import time
 def evaluate(list):
     i = 1
     ans = 0
@@ -16,7 +18,19 @@ def evaluate(list):
         
 
     return ans
+def process_equation(equation, key, sym):
+    permutations = []
+    numSym = len(equation) - 1
+    combos = [p for p in itertools.product(sym, repeat=numSym)]
+    for c in combos:
+        dog = list(itertools.chain.from_iterable(zip(equation, c)))
+        dog.append(equation[-1])
+        permutations.append(dog)
+    for p in permutations:
+        if fixString(p) == key:
+            return key
 
+    return 0
 #This is my closest solution
 #But it does not work with equations that contain odd number of values
 #need to figure out how to fix it for those
@@ -85,5 +99,26 @@ def main():
         
 
     print(ans)
+
+def main2():
+    file = fr'{os.path.dirname(os.path.abspath(__file__))}/input.txt'
+    with open(file) as f:
+        data = f.read().splitlines()
+    
+    val = [x.split(':') for x in data]
+    equations = {int(v[0]): [x for x in v[1].split()] for v in val}
+    
+    sym = ['+', '*', '|']
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+        results = pool.starmap(process_equation, [(equations[e], e, sym) for e in equations])
+    
+    # Flatten the list of results
+    
+    print(sum(results))
+    
+    
 if __name__=='__main__':
-    main()
+    start_time = time.time()
+    main2()
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")
