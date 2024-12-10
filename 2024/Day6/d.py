@@ -1,4 +1,8 @@
 import os
+import copy
+import time
+from multiprocessing import Pool, cpu_count
+
 class Guard:
     def __init__(self, pos):
         self.pos = pos
@@ -33,16 +37,21 @@ class Guard:
 def isValidCoord(x, y, map):
     return 0 <= x < len(map[0]) and 0 <= y < len(map)
 
-def runMaze(guard, objects, map):
+def runMaze(args):
+    guard, objects, map = args
     visited = set()
     while isValidCoord(guard.pos[0], guard.pos[1], map):
         visited.add((guard.pos[0], guard.pos[1], guard.direction))
-        if guard.checkAhead() in objects:
+        while guard.checkAhead() in objects:
             guard.rotate()
         guard.move()
         if (guard.pos[0], guard.pos[1], guard.direction) in visited:
             return True
     return False
+
+def run_maze_with_objects(v, objects, xStart, yStart, map):
+    objects.add((v[0], v[1]))
+    return runMaze((Guard([xStart, yStart]), objects, map))
 
 def main():
     file = fr'{os.path.dirname(os.path.abspath(__file__))}/input.txt'
@@ -50,20 +59,39 @@ def main():
         map = f.read().splitlines()
         map = [list(line) for line in map]
 
-    objects = []
+    objects = set()
     guard = None
+    xStart, yStart = 0, 0
     for y, line in enumerate(map):
         for x, space in enumerate(line):
             if space == '#':
-                objects.append((x, y))
+                objects.add((x, y))
             elif space == '^':
                 guard = Guard([x, y])
+                xStart = x
+                yStart = y
 
-    if guard is not None:
-        if runMaze(guard, objects, map):
-            print("Guard revisited a position with the same direction.")
-        else:
-            print("Guard did not revisit any position with the same direction.")
+    visited = set()
+    while isValidCoord(guard.pos[0], guard.pos[1], map):
+        visited.add((guard.pos[0], guard.pos[1]))
+        if guard.checkAhead() in objects:
+            guard.rotate()
+        guard.move()
+
+    loops = 0
+    visited.remove((xStart, yStart))
+    newObjects = copy.copy(objects)
+    with Pool(cpu_count()) as pool:
+        results = pool.starmap(run_maze_with_objects, [(v, newObjects, xStart, yStart, map) for v in visited])
+    print(cpu_count())
+    loops = sum(results)
+    print(loops)
+
+def measure_execution_time():
+    start_time = time.time()
+    main()
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")
 
 if __name__ == '__main__':
-    main()
+    measure_execution_time()

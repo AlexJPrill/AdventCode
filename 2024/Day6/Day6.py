@@ -1,5 +1,6 @@
 import os
 import copy
+import time
 def isValidCoord(x, y, matrix):
     return 0 <= x < len(matrix[0]) and 0 <= y < len(matrix)
 class Gaurd:
@@ -40,7 +41,7 @@ def runMaze(gaurd, objects, map):
     visited = set()
     while isValidCoord(gaurd.pos[0], gaurd.pos[1], map):
         visited.add((gaurd.pos[0], gaurd.pos[1], gaurd.directions[gaurd.direction]))
-        if gaurd.checkAhead() in objects:
+        while gaurd.checkAhead() in objects:
             gaurd.rotate()
         gaurd.move()
         if (gaurd.pos[0], gaurd.pos[1], gaurd.directions[gaurd.direction]) in visited:
@@ -53,13 +54,13 @@ def main():
         map = f.read().splitlines()
         map = [list(line) for line in map]
     
-    objects = []
+    objects = set()
     gaurd = None
     xStart, yStart = 0, 0
     for y, line in enumerate(map):
         for x, space in enumerate(line):
             if space == '#':
-                objects.append((x, y))
+                objects.add((x, y))
             elif space == '^':
                 gaurd = Gaurd([x, y])
                 xStart = x
@@ -75,21 +76,23 @@ def main():
         if gaurd.checkAhead() in objects:
             gaurd.rotate()
         gaurd.move()
-    print(len(visited))
-    visited.discard((xStart, yStart))
     loops = 0
     count = 0
+    visited.remove((xStart, yStart))
     for v in visited:
         newObjects = copy.copy(objects)
     
-        newObjects.append((v[0], v[1]))
-        print('Starting maze ', count, '/', len(visited))
+        newObjects.add((v[0], v[1]))
         if runMaze(Gaurd([xStart,yStart]), newObjects, map):
             loops += 1
         count += 1
     print(loops)
 
-
+def measure_execution_time():
+    start_time = time.time()
+    main()
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")
 
 if __name__=='__main__':
-    main()
+    measure_execution_time()
